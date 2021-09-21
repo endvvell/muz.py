@@ -7,4 +7,3 @@ I will be adding other aspects of music theory later on.
 
 
 https://user-images.githubusercontent.com/34137807/134115583-1744cfd4-32a2-4da3-8313-fd49f4bf2a98.mov
-
