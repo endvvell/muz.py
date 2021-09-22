@@ -128,7 +128,7 @@ def giveAnswer(question):
     note = question[1][0]
     majOrMin = question[1][1]
     answer = findAnswer(note, tone, majOrMin)
-    print(f'The scale: {"  ".join(answer)}')
+    print(f'{("Scale:").rjust(len("Answer:"))} {"  ".join(answer)}')
     print("\n-----------------------------------")
     pauseInput = input('(Press "enter" to continue or type "exit" to quit)\n')
     if pauseInput == 'exit' or pauseInput == 'q':
