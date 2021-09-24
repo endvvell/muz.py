@@ -16,3 +16,7 @@ Arguments:
 
 <difficulty level> - A number from 1-5 with optional 'a' and 'b' options for some levels of difficulty to specify only some of the scales.
                      Can be used independently of other arguments or in conjunction with them. Used to skip the level selection menu.
+
+
+https://user-images.githubusercontent.com/34137807/134750508-3fab04a4-0cc7-4ba4-b55b-bc5792447169.mov
+
