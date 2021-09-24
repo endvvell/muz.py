@@ -3,94 +3,62 @@
 import random as rnd
 import sys, re
 
-natural = b'\xe2\x99\xae'.decode('utf-8')
-sharp = b'\xe2\x99\xaf'.decode('utf-8')
-flat = b'\xe2\x99\xad'.decode('utf-8')
-dSharp = b'\xf0\x9d\x84\xaa'.decode('utf-8')
-dFlat = b'\xf0\x9d\x84\xab'.decode('utf-8')
+def startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType):
+    octave = {
+        'C' : [f'A{sharp}{dSharp}', f'B{sharp}', f'D{dFlat}'],
+        f'C{sharp}' : [f'B{dSharp}', f'D{flat}', f'E{flat}{dFlat}'],
+        'D' : [f'C{dSharp}', f'E{dFlat}'],
+        f'D{sharp}' : [f'C{sharp}{dSharp}', f'E{flat}', f'F{dFlat}', f'F{flat}{dFlat}'],
+        'E' : [f'D{dSharp}', f'F{flat}'],
+        'F' : [f'D{sharp}{dSharp}', f'E{sharp}', f'G{dFlat}'],
+        f'F{sharp}' : [f'E{dSharp}', f'G{flat}', f'A{flat}{dFlat}'],
+        'G' : [f'F{dSharp}', f'A{dFlat}'],
+        f'G{sharp}' : [f'F{sharp}{dSharp}', f'A{flat}', f'B{flat}{dFlat}'],
+        'A' : [f'G{dSharp}', f'B{dFlat}'],
+        f'A{sharp}' : [f'G{sharp}{dSharp}', f'B{flat}', f'C{dFlat}'],
+        'B' : [f'A{dSharp}', f'C{flat}']}
 
-accidentalType = [natural, sharp, flat, dSharp, dFlat]
+    mainNotes = [x for x in octave]
 
-octave = {
-    'C' : [f'B{sharp}', f'D{dFlat}'],
-    f'C{sharp}' : [f'D{flat}'],
-    'D' : [f'C{dSharp}', f'E{dFlat}'],
-    f'D{sharp}' : [f'E{flat}', f'F{dFlat}'],
-    'E' : [f'D{dSharp}', f'F{flat}'],
-    'F' : [f'E{sharp}', f'G{dFlat}'],
-    f'F{sharp}' : [f'G{flat}'],
-    'G' : [f'F{dSharp}', f'A{dFlat}'],
-    f'G{sharp}' : [f'A{flat}'],
-    'A' : [f'G{dSharp}', f'B{dFlat}'],
-    f'A{sharp}' : [f'B{flat}', f'C{dFlat}'],
-    'B' : [f'A{dSharp}', f'C{flat}']}
+    majors = ['C major', 'D major', 'E major', 'F major', 'G major', 'A major', 'B major']
+    minors = ['C minor', 'D minor', 'E minor', 'F minor', 'G minor', 'A minor', 'B minor']
 
-mainNotes = [x for x in octave]
-altNotes = [[y for y in octave[x]] for x in octave]
+    majSharps = []
+    majFlats = []
+    minSharps = []
+    minFlats = []
 
-majors = ['C major', 'D major', 'E major', 'F major', 'G major', 'A major', 'B major']
-minors = ['C minor', 'D minor', 'E minor', 'F minor', 'G minor', 'A minor', 'B minor']
+    for y in accidentalType:
+        if y == sharp:
+            for x in majors:
+                note = x.split()
+                majSharps.append((f"{note[0]}{sharp} {note[1]}"))
+            for x in minors:
+                note = x.split()
+                minSharps.append((f"{note[0]}{sharp} {note[1]}"))
+        elif y == flat:
+            for x in majors:
+                note = x.split()
+                majFlats.append(f"{note[0]}{flat} {note[1]}")
+            for x in minors:
+                note = x.split()
+                minFlats.append(f"{note[0]}{flat} {note[1]}")
 
-majSharps = []
-majFlats = []
-minSharps = []
-minFlats = []
+    allSharps = majSharps + minSharps
+    allFlats = majFlats + minFlats
+    allAccidentals = majSharps + majFlats + minSharps + minFlats
+    allNotes = allAccidentals + majors + minors
 
-for y in accidentalType:
-    if y == sharp:
-        for x in majors:
-            note = x.split()
-            majSharps.append((f"{note[0]}{sharp} {note[1]}"))
-        for x in minors:
-            note = x.split()
-            minSharps.append((f"{note[0]}{sharp} {note[1]}"))
-    elif y == flat:
-        for x in majors:
-            note = x.split()
-            majFlats.append(f"{note[0]}{flat} {note[1]}")
-        for x in minors:
-            note = x.split()
-            minFlats.append(f"{note[0]}{flat} {note[1]}")
-
-allSharps = majSharps + minSharps
-allFlats = majFlats + minFlats
-allAccidentals = majSharps + majFlats + minSharps + minFlats
-allNotes = allAccidentals + majors + minors
-
-optionsDict = {'1':['Major scales', majors],
-                '2':['Minor scales', minors],
-                '3':[f'All sharp accidental scales ({sharp})', allSharps],
-                '3a':[f'Only major sharp scales (major {sharp})', majSharps],
-                '3b':[f'Only minor sharp scales (minor {sharp})', minSharps],
-                '4':[f'All flat accidental scales ({flat})', allFlats],
-                '4a':[f'Only major flat scales (major {flat})', majFlats],
-                '4b':[f'Only minor flat scales (minor {flat})', minFlats],
-                '5':['Include all of the above', allNotes]}
-
-
-def difficulty(askDiff):
-    notes = []
-    notFound = 0
-    for x in list(optionsDict.keys()):
-        findKey = re.search(rf".*({x}).*", askDiff)
-        if findKey != None:
-            # if 'x' is found in the user input, check if there exist 'a' (or 'b') after the 'x' 
-            # and if so, skip to the next 'X' in dictionary, which would be "xa"
-            findSubA = re.search(rf".*({x}a).*", askDiff)
-            findSubB = re.search(rf".*({x}b).*", askDiff)
-            if findSubA != None or findSubB != None:
-                continue
-            elif findSubA == None and findSubB == None:
-                notes += optionsDict[x][1]
-        else:
-            notFound += 1
-            if notFound > len(optionsDict)-1:
-                return None
-    if len(notes) == 0:
-        return None
-    else:
-        notes = set(notes)
-        return notes
+    optionsDict = {'1':['Major scales', majors],
+                    '2':['Minor scales', minors],
+                    '3':[f'All sharp accidental scales ({sharp})', allSharps],
+                    '3a':[f'Only major sharp scales (major {sharp})', majSharps],
+                    '3b':[f'Only minor sharp scales (minor {sharp})', minSharps],
+                    '4':[f'All flat accidental scales ({flat})', allFlats],
+                    '4a':[f'Only major flat scales (major {flat})', majFlats],
+                    '4b':[f'Only minor flat scales (minor {flat})', minFlats],
+                    '5':['Include all of the above', allNotes]}
+    return octave, mainNotes, optionsDict
 
 
 def askQuestion(notes):
@@ -121,14 +89,21 @@ def askQuestion(notes):
         return rndTone, rndNote.split()
 
 
-# -- This block of code contains all processes that are involved in finding the answer --
+# -- This block of code contains all processes that are involved in finding the answers --
 
 def giveAnswer(question):
     tone = question[0]
     note = question[1][0]
     majOrMin = question[1][1]
     answer = findAnswer(note, tone, majOrMin)
-    print(f'{("Scale:").rjust(len("Answer:"))} {"  ".join(answer)}')
+    print(f'{("Scale :").rjust(len("Relative Minor :"))} {"  ".join(answer)}')
+    # finds relative minor and major
+    if majOrMin == 'major':
+        relMinor = findAnswer(answer[-2], -1, 'minor')
+        print(f'{(f"Relative Minor :").rjust(len("Relative Minor :"))} {"  ".join(relMinor)}')
+    elif majOrMin == 'minor':
+        relMinor = findAnswer(answer[-5], -1, 'major')
+        print(f'{(f"Relative Major :").rjust(len("Relative Minor :"))} {"  ".join(relMinor)}')
     print("\n-----------------------------------")
     pauseInput = input('(Press "enter" to continue or type "exit" to quit)\n')
     if pauseInput == 'exit' or pauseInput == 'q':
@@ -151,14 +126,14 @@ def findNote(note):
             noteRexY = re.search(rf"(^|[ ])({note})([ ]|$)", y)
             if noteRexX or noteRexY:
                 return startNoteX
-        startNoteX += 1        
+        startNoteX += 1
 
 
 def findTone(note, tone, startNote, majOrMin):
     if majOrMin == 'major':
         scaleFormula = 'WWHWWW'
         allTones = [note]
-        alphaList = allTones
+        alphaList = [mainNotes[startNote]]
         toneCount = 1 # '1' to count in the starting tone
         for step in scaleFormula:
             ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList)
@@ -169,7 +144,7 @@ def findTone(note, tone, startNote, majOrMin):
     elif majOrMin == 'minor':
         scaleFormula = 'WHWWHW'
         allTones = [note]
-        alphaList = allTones
+        alphaList = [mainNotes[startNote]]
         toneCount = 1
         for step in scaleFormula:
             ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList)
@@ -184,7 +159,8 @@ def toneSearch(allTones, step, startNote, toneCount, tone, alphaList):
     restartListH = startNote+1 - len(mainNotes)
     if step == "W":
         step = 2
-        toneCount += 1
+        if tone > 1:
+            toneCount += 1
         nextNote = startNote + step
         if restartListW >= 0:
             nextNote = 0
@@ -193,22 +169,21 @@ def toneSearch(allTones, step, startNote, toneCount, tone, alphaList):
                 nextNote = nextNote - len(mainNotes)
             alphabet = alphaSearch(allTones, nextNote, alphaList, step)
             allTones.append(alphabet[1])
-            if toneCount == tone:
+            if toneCount == tone and tone > -1:
                 print("-----------------------------------\n")
-                print(f"Answer: {allTones[-1]}")
-                return nextNote, allTones, toneCount
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
             return nextNote, allTones, toneCount
-        else:  
+        else:
             alphabet = alphaSearch(allTones, nextNote, alphaList, step)
             allTones.append(alphabet[1])
-            if toneCount == tone:
+            if toneCount == tone and tone > -1:
                 print("-----------------------------------\n")
-                print(f"Answer: {allTones[-1]}")
-                return nextNote, allTones, toneCount
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
             return nextNote, allTones, toneCount
     elif step == "H":
         step = 1
-        toneCount += 1
+        if tone > 1:
+            toneCount += 1
         nextNote = startNote + step
         if restartListH >= 0:
             nextNote = 0
@@ -217,89 +192,188 @@ def toneSearch(allTones, step, startNote, toneCount, tone, alphaList):
                 nextNote = nextNote - len(mainNotes)
             alphabet = alphaSearch(allTones, nextNote, alphaList, step)
             allTones.append(alphabet[1])
-            if toneCount == tone:
+            if toneCount == tone and tone > -1:
                 print("-----------------------------------\n")
-                print(f"Answer: {allTones[-1]}")
-                return nextNote, allTones, toneCount
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
             return nextNote, allTones, toneCount
         else:
             alphabet = alphaSearch(allTones, nextNote, alphaList, step)
             allTones.append(alphabet[1])
-            if toneCount == tone:
+            if toneCount == tone and tone > -1:
                 print("-----------------------------------\n")
-                print(f"Answer: {allTones[-1]}")
-                return nextNote, allTones, toneCount
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
             return nextNote, allTones, toneCount
 
 
 def alphaSearch(allTones, nextNote, alphaList, step):
     alphabet = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
-    countXNotes = []
-    for x in mainNotes[nextNote-step:nextNote+1]:
-        countXNotes.append(x)
-    
+
     """
     # Sanity checks:
-    print("\n** Notes of X axis between previous step and next note to be appended:", countXNotes)
-    print("** Previous note:", allTones[-1])
-    print("** Next note:", mainNotes[nextNote])
-    print("** Is previous note mentioned in the steps:", allTones[-1][0] in countXNotes)
-    """    
-
-    origAlphaList = alphaList
-    if allTones[-1][0] != 'B':
-        oldIndex = alphabet.index(allTones[-1][0])
+    print("** Current note:", allTones[-1])
+    print("** Next X-axis note:", mainNotes[nextNote])
+    if allTones[-1][0] == 'B':
+        print("** Next Y-axis note should be:", alphabet[alphabet.index('C')])
     else:
-        oldIndex = alphabet.index('C')-1
-    toneRange = oldIndex - alphabet.index(mainNotes[nextNote][0])
-    if toneRange != -1:
-        # checks if the note is in the alphabet list, if not, add it to the list.
-        if allTones[-1][0] in countXNotes: 
-            alphaList = alphaList + countXNotes
-            if mainNotes[nextNote] not in " ".join(alphaList):
-                return alphaList, mainNotes[nextNote]
-            for x in octave[mainNotes[nextNote]]:
-                if x[0] not in " ".join(alphaList):
-                    return alphaList, x
-            return origAlphaList, mainNotes[nextNote]
-        else:
-            alphaList = alphaList + [mainNotes[nextNote]]
-            for x in octave[mainNotes[nextNote]]:
-                if x[0] not in " ".join(alphaList):
-                    return alphaList, x
-            return origAlphaList, mainNotes[nextNote]
+        print("** Next Y-axis note should be:", alphabet[alphabet.index(allTones[-1][0])+1])
+    """
+    
+    if allTones[-1][0] == 'B':
+        for y in octave[mainNotes[nextNote]]:
+            if y[0] == 'C':
+                alphaList.append(mainNotes[nextNote])
+                return alphaList, y
     else:
-        return origAlphaList, mainNotes[nextNote]
+        for y in octave[mainNotes[nextNote]]:
+            if y[0] == alphabet[alphabet.index(allTones[-1][0])+1]:
+                alphaList.append(mainNotes[nextNote])
+                return alphaList, y
+    
+    alphaList.append(mainNotes[nextNote])
+    return alphaList, mainNotes[nextNote]
 
 
-if len(sys.argv) > 1:
-    askDiff = sys.argv[1]
-else:
+# -- This block of code contains all processes that are involved in asking the questions --
+
+def askMenu(options):
     print("\n--------------------------------------------------\n")
     print("\t\tChoose the difficulty:\n")
     print(" Select what to include:\n")
-    optList = list(optionsDict.keys())
+    optList = list(options.keys())
     for x in optList:
         if re.search(r".*(.a).*", x) or re.search(r".*(.b).*", x):
-            print(f"     {x} - {optionsDict[str(x)][0]}")
+            print(f"     {x} - {options[str(x)][0]}")
         else:
-            print(f"  {x} - {optionsDict[str(x)][0]}")
+            print(f"  {x} - {options[str(x)][0]}")
     askDiff = input("\nInclude: ")
     print("\n--------------------------------------------------\n")
+    return askDiff
 
-if difficulty(askDiff) != None :
-    level = difficulty(askDiff)
-    print("Let's begin:\n")
-    while True:
-        try:
-            question = askQuestion(level)
-            pauseInput = input("")
-            if pauseInput == 'exit' or pauseInput == 'q':
+
+def difficulty(askDiff, options):
+    notes = []
+    notFound = 0
+    for x in list(options.keys()):
+        findKey = re.search(rf".*({x}).*", askDiff)
+        if findKey != None:
+            # if 'x' is found in the user input, check if there exist 'a' (or 'b') after the 'x', and if so, skip to the next 'X' in dictionary, which would be "xa"
+            findSubA = re.search(rf".*({x}a).*", askDiff)
+            findSubB = re.search(rf".*({x}b).*", askDiff)
+            if findSubA != None or findSubB != None:
+                continue
+            elif findSubA == None and findSubB == None:
+                notes += options[x][1]
+        else:
+            notFound += 1
+            if notFound > len(options)-1:
+                return None
+    if len(notes) == 0:
+        return None
+    else:
+        notes = set(notes)
+        return notes
+
+
+def giveCheats():
+    mList = ['major', 'minor']
+    for z in mList:
+        print(f'\n{(z.upper()).rjust(20)}')
+        for x in octave:
+            ansScale = findAnswer(x, -1, z)
+            print(f"\n{('(').rjust(16)} {ansScale[0]} )")
+            print(f'{((ansScale[0]).ljust(3))}|  {" - ".join(ansScale)}')
+            for y in octave[x]:
+                if f'{sharp}{dSharp}' in y or f'{flat}{dFlat}' in y:
+                    continue
+                else:
+                    ansScale = findAnswer(y, -1, z)
+                    print(f'{((ansScale[0]).ljust(3))}|  {" - ".join(ansScale)}')
+
+
+def argFunc(optionsDict):
+    maxOption = max([x for x in optionsDict])
+    # searching for numeric argument for difficulty
+    diffSearch = re.compile(rf".?([1-{maxOption}]).?")
+    foundDiff = list("".join(filter(diffSearch.findall, sys.argv)))
+    for x in foundDiff:
+        if x.isnumeric():
+            foundDiff = x
+    # searching for supplementary arguments
+    argSearch = re.compile(r"\-(.+)", re.I)
+    foundArg = list("".join(filter(argSearch.findall, sys.argv)))
+    for x in foundArg:
+        if x == '-' or x.isnumeric():
+            foundArg.pop(foundArg.index(x))
+    if foundArg:
+        for x in foundArg:
+            if x == 'c':
+                giveCheats()
+                sys.exit()
+            if x == 'b':
+                print("Basic Notes - Enabled")
+    return foundArg, foundDiff
+
+
+def showTime(askDiff, options):
+    if difficulty(askDiff, options) != None :
+        level = difficulty(askDiff, options)
+        print("Let's begin:\n")
+        while True:
+            try:
+                question = askQuestion(level)
+                pauseInput = input("")
+                if pauseInput == 'exit' or pauseInput == 'q':
+                    print("\nGoodbye\n")
+                    break
+                giveAnswer(question)
+            except:
                 print("\nGoodbye\n")
-                break
-            giveAnswer(question)
-        except:
-            print("\nGoodbye\n")
-            sys.exit()
+                sys.exit()
+    else:
+        print("\nGoodbye\n")
+
+
+# -- execution starts here
+
+natural = b'\xe2\x99\xae'.decode('utf-8')
+sharp = b'\xe2\x99\xaf'.decode('utf-8')
+flat = b'\xe2\x99\xad'.decode('utf-8')
+dSharp = b'\xf0\x9d\x84\xaa'.decode('utf-8')
+dFlat = b'\xf0\x9d\x84\xab'.decode('utf-8')
+accidentalType = [natural, sharp, flat, dSharp, dFlat]
+
+firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
+octave = firstArgs[0]
+mainNotes = firstArgs[1]
+options = firstArgs[2]
+arguments = argFunc(options)
+
+if len(sys.argv) > 1:
+    if arguments[0]:
+        if 'b' in arguments[0]:
+            natural = ''
+            sharp = '#'
+            flat = 'b'
+            dSharp = '##'
+            dFlat = 'bb'
+            accidentalType = ['#', 'b', '##', 'bb']
+            firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
+            octave = firstArgs[0]
+            mainNotes = firstArgs[1]
+            options = firstArgs[2]
+            if arguments[1]:
+                askDiff = arguments[1]
+                showTime(askDiff, options)
+            else:
+                askDiff = askMenu(options)
+                showTime(askDiff, options)
+    else:
+        if arguments[1]:
+            askDiff = arguments[1]
+            showTime(askDiff, options)
+        else:
+            askDiff = askMenu(options)
+            showTime(askDiff, options)
 else:
-    print("\nGoodbye\n")
+    askDiff = askMenu(options)
+    showTime(askDiff, options)
