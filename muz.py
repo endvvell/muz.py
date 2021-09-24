@@ -228,7 +228,7 @@ def difficulty(askDiff, options):
                 continue
             elif findSubA == None and findSubB == None:
                 notes += options[x][1]
-                print(f'** {options[x][0]}')
+                print(f'* {options[x][0]}')
         else:
             notFound += 1
             if notFound > len(options)-1:
@@ -376,8 +376,16 @@ else:
         sys.exit()
     else:
         if arguments[1]:
-            askDiff = arguments[1]
-            showTime(askDiff, options)
+            try:
+                askDiff = arguments[1]
+                showTime(askDiff, options)
+            except:
+                print("\nGoodbye\n")
+                sys.exit()
         else:
-            askDiff = askMenu(options)
-            showTime(askDiff, options)
+            try:
+                askDiff = askMenu(options)
+                showTime(askDiff, options)
+            except:
+                print("\nGoodbye\n")
+                sys.exit()
