@@ -232,8 +232,10 @@ def difficulty(askDiff, options):
         else:
             notFound += 1
             if notFound > len(options)-1:
+                print("Invalid option.")
                 return None
     if len(notes) == 0:
+        print("Invalid option.")
         return None
     else:
         if len(notes) > 7:
@@ -346,46 +348,24 @@ if 'b' in arguments[0]:
     dSharp = '##'
     dFlat = 'bb'
     accidentalType = ['#', 'b', '##', 'bb']
-    if 'c' in arguments[0]:
-        firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
-        octave = firstArgs[0]
-        mainNotes = firstArgs[1]
-        giveCheats(octave)
-        sys.exit()
-    else:
-        if arguments[1]:
-            firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
-            octave = firstArgs[0]
-            mainNotes = firstArgs[1]
-            options = firstArgs[2]
-            askDiff = arguments[1]
-            showTime(askDiff, options)
-        else:
-            firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
-            octave = firstArgs[0]
-            mainNotes = firstArgs[1]
-            options = firstArgs[2]
-            askDiff = askMenu(options)
-            showTime(askDiff, options)
+    firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
+    octave = firstArgs[0]
+    mainNotes = firstArgs[1]
+    options = firstArgs[2]
+
+if 'c' in arguments[0]:
+    octave = firstArgs[0]
+    mainNotes = firstArgs[1]
+    giveCheats(octave)
+    sys.exit()
+
+if arguments[1]:
+    askDiff = arguments[1]
+    showTime(askDiff, options)
 else:
-    if 'c' in arguments[0]:
-        firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
-        octave = firstArgs[0]
-        mainNotes = firstArgs[1]
-        giveCheats(octave)
-        sys.exit()
-    else:
-        if arguments[1]:
-            try:
-                askDiff = arguments[1]
-                showTime(askDiff, options)
-            except:
-                print("\nGoodbye\n")
-                sys.exit()
-        else:
-            try:
-                askDiff = askMenu(options)
-                showTime(askDiff, options)
-            except:
-                print("\nGoodbye\n")
-                sys.exit()
+    try:
+        askDiff = askMenu(options)
+    except:
+        print("\nGoodbye\n")
+        sys.exit()        
+    showTime(askDiff, options)
