@@ -6,7 +6,7 @@ Right now the script is useful for learning all the different tones of any scale
 I will be adding other aspects of music theory later on.
 
 Usage:
-python3 muz.py -\<argument> <difficulty level>
+python3 muz.py -\<argument> \<difficulty level>
 
 Arguments:
 -b    - replaces UTF-8 symbols for sharp and flat with '#' and 'b'
@@ -14,7 +14,7 @@ Arguments:
 -c    - prints out a cheat sheet for all the scales. Can be used with '-b' to print the notes with 'basic' notation, 
         like so: '-cb' | '-bc' | '-c -b', doesn't matter.
 
-<difficulty level> - A number from 1-5 with optional 'a' and 'b' options for some levels of difficulty to specify only some of the scales.
+\<difficulty level> - A number from 1-5 with optional 'a' and 'b' options for some levels of difficulty to specify only some of the scales.
                      Can be used independently of other arguments or in conjunction with them. Used to skip the level selection menu.
 
 
