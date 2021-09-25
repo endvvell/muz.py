@@ -6,7 +6,7 @@ Right now the script is useful for learning all the different tones of any scale
 I will be adding other aspects of music theory later on.
 
 Usage:
-python3 muz.py -<argument> <difficulty level>
+python3 muz.py -\<argument> <difficulty level>
 
 Arguments:
 -b    - replaces UTF-8 symbols for sharp and flat with '#' and 'b'
