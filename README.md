@@ -1,5 +1,5 @@
 # muz.py
-Anki-like program to learn music theory by heart.
+Anki-like program for music theory.
 
 The values for tones, notes, and scales are determined algorithmically, meaning there is no stored value for, say 4th tone of D♯ Minor scale (G♯), but instead the algorithm goes through the notes in an octave and determines that value. This makes the script easily extendable to the entirety of music theory.
 Right now the script is useful for learning all the different tones of any scale, so playing music becomes intuitive.
