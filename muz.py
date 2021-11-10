@@ -63,19 +63,31 @@ def startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType):
 
 # -- This block of code contains all processes that are involved in finding the answers --
 
+def alignRes(answer):
+    for x in answer:
+        answer[answer.index(x)] = (x).ljust(4)
+    return answer
+
 def giveAnswer(question, pauseAns):
     tone = question[0]
     note = question[1][0]
     majOrMin = question[1][1]
-    answer = findAnswer(note, tone, majOrMin, pauseAns)
-    print(f'{("Scale :").rjust(len("Relative Minor :"))} {"  ".join(answer)}')
+    answer = alignRes(findAnswer(note, tone, majOrMin, pauseAns))
+    ruler = []
+    rcount = 0
+    for x in answer:
+        rcount += 1
+        ansLen = len(answer[answer.index(x)])
+        ruler.append(str(rcount).ljust(ansLen))
+    print(f'{"|".rjust(len("Relative Minor :"))} {"".join(ruler)}')
+    print(f'{("Scale :").rjust(len("Relative Minor :"))} {"".join(answer)}')
     # finds relative minor and major
     if majOrMin == 'major':
-        relMinor = findAnswer(answer[-2], -1, 'minor', pauseAns)
-        print(f'{(f"Relative Minor :").rjust(len("Relative Minor :"))} {"  ".join(relMinor)}')
+        relMinor = alignRes(findAnswer(answer[-3].strip(), -1, 'minor', pauseAns))
+        print(f'{(f"Relative Minor :").rjust(len("Relative Minor :"))} {"".join(relMinor)}')
     elif majOrMin == 'minor':
-        relMinor = findAnswer(answer[-5], -1, 'major', pauseAns)
-        print(f'{(f"Relative Major :").rjust(len("Relative Minor :"))} {"  ".join(relMinor)}')
+        relMinor = alignRes(findAnswer(answer[-6].strip(), -1, 'major', pauseAns))
+        print(f'{(f"Relative Major :").rjust(len("Relative Minor :"))} {"".join(relMinor)}')
     print("\n-----------------------------------")
     pauseInput = input('(Press "enter" to continue or type "exit" to quit)\n')
     if pauseInput == 'exit' or pauseInput == 'q':
@@ -306,17 +318,26 @@ def askQuestion(notes):
 def giveCheats(octave):
     mList = ['major', 'minor']
     for z in mList:
-        print(f'\n\n{(z.upper()).rjust(24)}')
+        print(f'\n\n{(z.upper()).rjust(31)}')
         for x in octave:
-            ansScale = findAnswer(x, -1, z, 0) #last "0" is to imitate pauseAns varibale
-            print(f"\n{('(').rjust(20)} {ansScale[0]} )")
-            print(f'  {((ansScale[0]).ljust(4))}|  {" - ".join(ansScale)}')
+            ansScale = alignRes(findAnswer(x.strip(), -1, z, 0)) #last "0" is to imitate pauseAns varibale
+            cheatStringLen = len(f'  {((ansScale[0]).ljust(4))}|  {"-  ".join(ansScale)}')
+            print(f"\n{('(').rjust(int(cheatStringLen/2.25))} {ansScale[0].strip()} )")
+            ruler = []
+            rcount = 0
+            for p in ansScale:
+                rcount += 1
+                ansLen = len(ansScale[ansScale.index(p)])
+                ruler.append(("(" + str(rcount) + ")").ljust(ansLen))
+            introLen = len(f'{((ansScale[0]).ljust(6))}|')
+            print(f'{"|".rjust(introLen)} {"   ".join(ruler)}')
+            print(f'  {((ansScale[0]).ljust(4))}|  {"-  ".join(ansScale)}')
             for y in octave[x]:
                 if f'{sharp}{dSharp}' in y or f'{flat}{dFlat}' in y:
                     continue
                 else:
-                    ansScale = findAnswer(y, -1, z, 0)
-                    print(f'  {((ansScale[0]).ljust(4))}|  {" - ".join(ansScale)}')
+                    ansScale = alignRes(findAnswer(y, -1, z, 0))
+                    print(f'  {((ansScale[0]).ljust(4))}|  {"-  ".join(ansScale)}')
         print("\n")
 
 
