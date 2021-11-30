@@ -61,6 +61,7 @@ def startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType):
     return octave, mainNotes, optionsDict
 
 
+
 # -- This block of code contains all processes that are involved in finding the answers --
 
 def alignRes(answer):
@@ -68,11 +69,45 @@ def alignRes(answer):
         answer[answer.index(x)] = (x).ljust(4)
     return answer
 
-def giveAnswer(question, pauseAns):
-    tone = question[0]
-    note = question[1][0]
-    majOrMin = question[1][1]
-    answer = alignRes(findAnswer(note, tone, majOrMin, pauseAns))
+
+def simplify(givenNotes):
+    if f"{dSharp}" in givenNotes:
+        givenNotes = givenNotes[0] + "##"
+    elif f"{dFlat}" in givenNotes:
+        givenNotes = givenNotes[0] + "bb"
+    elif f"{sharp}" in givenNotes:
+        givenNotes = givenNotes[0] + "#"
+    elif f"{flat}" in givenNotes:
+        givenNotes = givenNotes[0] + "b"
+    return givenNotes
+
+
+def checkAnswer(xrcType, tone, pauseAns, foundAns):
+    if xrcType == 1:
+        alphaAns = foundAns[1]
+        simpleAns = simplify(foundAns[0][tone-1])
+        if pauseAns:
+            if pauseAns.casefold() != simpleAns.casefold() and (pauseAns.casefold() in [simplify(x.casefold()) for x in octave[f'{alphaAns[tone-1]}']] or pauseAns.casefold() == simplify(alphaAns[tone-1].casefold())):
+                print(f'{("Your answer :").rjust(len("Relative Minor :"))}', f'"{pauseAns}" - Enharmonically correct, but not notation-wise({foundAns[0][tone-1]})\n')
+            elif pauseAns.casefold() == simpleAns.casefold():
+                print(f'{("Your answer :").rjust(len("Relative Minor :"))}', f'"{pauseAns}" - Correct\n')
+            else:
+                print(f'{("Your answer :").rjust(len("Relative Minor :"))}', f'"{pauseAns}" - Incorrect\n')
+    elif xrcType == 2:
+        if pauseAns:
+            if [simplify(x.casefold()) for x in pauseAns] == [simplify(x.casefold()) for x in foundAns[0]]:
+                print(f'{("Your answer :").rjust(len("Relative Minor :"))}', f'"{" ".join(pauseAns)}" - Correct\n')
+            else:
+                print(f'{("Your answer :").rjust(len("Relative Minor :"))}', f'"{" ".join(pauseAns)}" - Incorrect\n')
+
+
+def giveAnswer(question, pauseAns, xrcType):
+    tone = question[0] # a tone to find. ex.: 6
+    note = question[1][0] # a root note of the scale. ex.: 'F'
+    majOrMin = question[1][1] # ex.: 'major' or 'minor'
+    foundAns = findAnswer(note, tone, majOrMin) # rt.: (['E♭', 'F', 'G♭',...] , ['D♯', 'F', 'F♯',...])
+    checkAnswer(xrcType, tone, pauseAns, foundAns) # doesn't return anything, only prints
+    answer = alignRes(foundAns[0]) # rt.: ['B   ', 'C♯  ', 'D   ',...]
     ruler = []
     rcount = 0
     for x in answer:
@@ -81,24 +116,25 @@ def giveAnswer(question, pauseAns):
         ruler.append(str(rcount).ljust(ansLen))
     print(f'{"|".rjust(len("Relative Minor :"))} {"".join(ruler)}')
     print(f'{("Scale :").rjust(len("Relative Minor :"))} {"".join(answer)}')
+    
     # finds relative minor and major
     if majOrMin == 'major':
-        relMinor = alignRes(findAnswer(answer[-3].strip(), -1, 'minor', pauseAns))
+        relMinor = alignRes(findAnswer(answer[-3].strip(), -1, 'minor')[0])
         print(f'{(f"Relative Minor :").rjust(len("Relative Minor :"))} {"".join(relMinor)}')
     elif majOrMin == 'minor':
-        relMinor = alignRes(findAnswer(answer[-6].strip(), -1, 'major', pauseAns))
+        relMinor = alignRes(findAnswer(answer[-6].strip(), -1, 'major')[0])
         print(f'{(f"Relative Major :").rjust(len("Relative Minor :"))} {"".join(relMinor)}')
     print("\n-----------------------------------")
     pauseInput = input('(Press "enter" to continue or type "exit" to quit)\n')
-    if pauseInput == 'exit' or pauseInput == 'q':
+    if pauseInput == 'exit' or pauseInput == 'quit' or pauseInput == 'q':
         sys.exit()
     print("\n"*40)
     return answer
 
 
-def findAnswer(note, tone, majOrMin, pauseAns):
-    startNote = findNote(note)
-    allTones = findTone(note, tone, startNote, majOrMin, pauseAns)
+def findAnswer(note, tone, majOrMin):
+    startNote = findNote(note) # rt.: an index of a root note in 'octave'. ex.: 0 - 11
+    allTones = findTone(note, tone, startNote, majOrMin) # ['B', 'C♯', 'D',...] , ['C', 'D', 'E', 'F', 'G',...]  <--- ('allTones' , 'alphaAns')
     return allTones
 
 
@@ -113,32 +149,34 @@ def findNote(note):
         startNoteX += 1
 
 
-def findTone(note, tone, startNote, majOrMin, pauseAns):
+def findTone(note, tone, startNote, majOrMin):
     if majOrMin == 'major':
         scaleFormula = 'WWHWWWH'
         allTones = [note]
-        alphaList = [mainNotes[startNote]]
+        alphaList = [mainNotes[startNote]] # 'alphaList' will keep track of actual "key(or string) that is played", while 'allTones' keeps correct notation for that key
         toneCount = 1 # '1' to count in the starting tone
         for step in scaleFormula:
-            ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList, pauseAns)
+            ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList)
             startNote = ans[0]
             allTones = ans[1]
             toneCount = ans[2]
-        return allTones
+            alphaAns = ans[3] # <--- 'alphaList'
+        return allTones, alphaAns
     elif majOrMin == 'minor':
         scaleFormula = 'WHWWHWW'
         allTones = [note]
         alphaList = [mainNotes[startNote]]
         toneCount = 1
         for step in scaleFormula:
-            ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList, pauseAns)
+            ans = toneSearch(allTones, step, startNote, toneCount, tone, alphaList)
             startNote = ans[0]
             allTones = ans[1]
             toneCount = ans[2]
-        return allTones
+            alphaAns = ans[3] # <--- 'alphaList'
+        return allTones, alphaAns
 
 
-def makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartList, pauseAns):
+def makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartList):
     if tone > 1:
         toneCount += 1
     nextNote = startNote + step
@@ -147,72 +185,47 @@ def makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartList,
         nextNote = restartList
         if nextNote > len(mainNotes):
             nextNote = nextNote - len(mainNotes)
-        alphabet = alphaSearch(allTones, nextNote, alphaList, step)
+        alphabet = alphaSearch(allTones, nextNote, alphaList) # ['B', 'C♯', ..., 'F♯'] , F♯
         allTones.append(alphabet[1])
-        if toneCount == tone and tone > -1:
-            print("-----------------------------------\n")
-            print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
-            if pauseAns:
-                if f"{dSharp}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "##"
-                elif f"{dFlat}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "bb"
-                elif f"{sharp}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "#"
-                elif f"{flat}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "b"
-                else:
-                    simpleAns = allTones[-1]
-                if pauseAns == simpleAns:
-                    print(f'{("Your answer :").rjust(len("Relative Minor :"))} Correct\n')
-                else:
-                    print(f'{("Your answer :").rjust(len("Relative Minor :"))} Incorrect\n')
+        if xrcType == 1:
+            if toneCount == tone and tone > -1:
+                print("-----------------------------------\n")
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
+        elif xrcType == 2 and toneCount == 8:
+            print(f'{("Answer :").rjust(len("Relative Minor :"))} {" ".join(allTones)}\n')
         return nextNote, allTones, toneCount
     else:
-        alphabet = alphaSearch(allTones, nextNote, alphaList, step)
+        alphabet = alphaSearch(allTones, nextNote, alphaList) # ['B', 'C♯', ..., 'F♯'] , F♯
         allTones.append(alphabet[1])
-        if toneCount == tone and tone > -1:
-            print("-----------------------------------\n")
-            print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
-            if pauseAns:
-                if f"{dSharp}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "##"
-                elif f"{dFlat}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "bb"
-                elif f"{sharp}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "#"
-                elif f"{flat}" in allTones[-1]:
-                    simpleAns = allTones[-1][0] + "b"
-                else:
-                    simpleAns = allTones[-1]
-                if pauseAns == simpleAns:
-                    print(f'{("Your answer :").rjust(len("Relative Minor :"))} Correct\n')
-                else:
-                    print(f'{("Your answer :").rjust(len("Relative Minor :"))} Incorrect\n')
-            
+        if xrcType == 1:
+            if toneCount == tone and tone > -1 and xrcType == 1:
+                print("-----------------------------------\n")
+                print(f'{("Answer :").rjust(len("Relative Minor :"))} {"".join(allTones[-1])}\n')
+        elif xrcType == 2 and toneCount == 8:
+            print(f'{("Answer :").rjust(len("Relative Minor :"))} {" ".join(allTones)}\n')
         return nextNote, allTones, toneCount
 
 
-def toneSearch(allTones, step, startNote, toneCount, tone, alphaList, pauseAns):
+def toneSearch(allTones, step, startNote, toneCount, tone, alphaList):
     restartListW = startNote+2 - len(mainNotes)
     restartListH = startNote+1 - len(mainNotes)
     if step == "W":
         step = 2
-        madeStep = makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartListW, pauseAns)
+        madeStep = makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartListW)
         nextNote = madeStep[0]
         allTones = madeStep[1]
         toneCount = madeStep[2]
-        return nextNote, allTones, toneCount
+        return nextNote, allTones, toneCount, alphaList
     elif step == "H":
         step = 1
-        madeStep = makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartListH, pauseAns)
+        madeStep = makeStep(allTones, step, startNote, toneCount, tone, alphaList, restartListH)
         nextNote = madeStep[0]
         allTones = madeStep[1]
         toneCount = madeStep[2]
-        return nextNote, allTones, toneCount
+        return nextNote, allTones, toneCount, alphaList
 
 
-def alphaSearch(allTones, nextNote, alphaList, step):
+def alphaSearch(allTones, nextNote, alphaList):
     alphabet = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 
     """
@@ -235,14 +248,28 @@ def alphaSearch(allTones, nextNote, alphaList, step):
             if y[0] == alphabet[alphabet.index(allTones[-1][0])+1]:
                 alphaList.append(mainNotes[nextNote])
                 return alphaList, y
-    
+
     alphaList.append(mainNotes[nextNote])
     return alphaList, mainNotes[nextNote]
 
 
+
 # -- This block of code contains all processes that are involved in asking the questions --
 
-def askMenu(options):
+def askXrc():
+    while True:
+        xrc = input("\nChoose exercise:\n1 - Find Tone\n2 - Write Out Scales\nExercise: ")
+        if (0 < len(xrc) < 2) and re.search(r"(^[1-2])", xrc) :
+            if xrc == '1':
+                return 1 # find tone
+            elif xrc == '2':
+                return 2 # write out scales
+        else:
+            print("* Please enter a valid option")
+                
+
+
+def diffSelector(options):
     print("\n--------------------------------------------------\n")
     print("\t\tChoose the difficulty:\n")
     print(" Select what to include:\n")
@@ -252,29 +279,29 @@ def askMenu(options):
             print(f"     {x} - {options[str(x)][0]}")
         else:
             print(f"  {x} - {options[str(x)][0]}")
-    askDiff = input("\nInclude: ")
+    difficulty = input("\nInclude: ")
     print("\n--------------------------------------------------\n")
-    return askDiff
+    return difficulty
 
 
-def difficulty(askDiff, options):
+def selectLevel(diff):
     notes = []
     notFound = 0
-    for x in list(options.keys()):
-        findKey = re.search(rf".*({x}).*", askDiff)
+    for x in list(diffOptions.keys()):
+        findKey = re.search(rf".*({x}).*", diff)
         if findKey != None:
             # if 'x' is found in the user input, check if there exist 'a' (or 'b') after the 'x'
             # and if so, skip to the next 'X' in dictionary, which would be "xa"
-            findSubA = re.search(rf".*({x}a).*", askDiff)
-            findSubB = re.search(rf".*({x}b).*", askDiff)
+            findSubA = re.search(rf".*({x}a).*", diff)
+            findSubB = re.search(rf".*({x}b).*", diff)
             if findSubA != None or findSubB != None:
                 continue
             elif findSubA == None and findSubB == None:
-                notes += options[x][1]
-                print(f'* {options[x][0]}')
+                notes += diffOptions[x][1]
+                print(f'* {diffOptions[x][0]}')
         else:
             notFound += 1
-            if notFound > len(options)-1:
+            if notFound > len(diffOptions)-1:
                 print("Invalid option.")
                 return None
     if len(notes) == 0:
@@ -287,31 +314,35 @@ def difficulty(askDiff, options):
         return notes
 
 
-def askQuestion(notes):
-    rndTone = rnd.randint(2, 7)
+def askQuestion(xrc, notes):
+    rndTone = rnd.randint(2, 7) # 2 - 7
     numSuffix = ""
     notes = list(notes)
     rndNote = notes[rnd.randint(0, len(notes)-1)]
-    print("Question:")
-    if rndTone == 1:
-        numSuffix = "st"
-        quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
-        print(quest)
-        return rndTone, rndNote.split()
-    elif rndTone == 2:
-        numSuffix = "nd"
-        quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
-        print(quest)
-        return rndTone, rndNote.split()
-    elif rndTone == 3:
-        numSuffix = "rd"
-        quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
-        print(quest)
-        return rndTone, rndNote.split()
-    else:
-        numSuffix = "th"
-        quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
-        print(quest)
+    if xrc == 1:
+        print("Question:")
+        if rndTone == 1: # 1st and 8th tones aren't really used as specified above
+            numSuffix = "st"
+            quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
+            print(quest)
+            return rndTone, rndNote.split()
+        elif rndTone == 2:
+            numSuffix = "nd"
+            quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
+            print(quest)
+            return rndTone, rndNote.split()
+        elif rndTone == 3:
+            numSuffix = "rd"
+            quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
+            print(quest)
+            return rndTone, rndNote.split()
+        else:
+            numSuffix = "th"
+            quest = (f"What is the {rndTone}{numSuffix} tone of {rndNote}?")
+            print(quest)
+            return rndTone, rndNote.split()
+    elif xrc == 2:
+        print(f"\nWrite out {rndNote} scale:\n")
         return rndTone, rndNote.split()
 
 
@@ -320,7 +351,7 @@ def giveCheats(octave):
     for z in mList:
         print(f'\n\n{(z.upper()).rjust(31)}')
         for x in octave:
-            ansScale = alignRes(findAnswer(x.strip(), -1, z, 0)) #last "0" is to imitate pauseAns varibale
+            ansScale = alignRes(findAnswer(x.strip(), -1, z)[0])
             cheatStringLen = len(f'  {((ansScale[0]).ljust(4))}|  {"-  ".join(ansScale)}')
             print(f"\n{('(').rjust(int(cheatStringLen/2.25))} {ansScale[0].strip()} )")
             ruler = []
@@ -336,43 +367,54 @@ def giveCheats(octave):
                 if f'{sharp}{dSharp}' in y or f'{flat}{dFlat}' in y:
                     continue
                 else:
-                    ansScale = alignRes(findAnswer(y, -1, z, 0))
+                    ansScale = alignRes(findAnswer(y, -1, z)[0])
                     print(f'  {((ansScale[0]).ljust(4))}|  {"-  ".join(ansScale)}')
         print("\n")
 
 
-def argFunc(optionsDict):
-    maxOption = max([x for x in optionsDict])
+
+# Searches for any arguments(numbers and letters) passed to the program. If found: numbers are returned in 'foundNum', letters in 'foundArg' 
+def argFunc(diffOptions):
+    maxOption = max([x for x in diffOptions])
         # searching for numeric argument for difficulty
-    diffSearch = re.compile(rf".?([1-{maxOption}]).?")
-    foundDiff = "".join(list("".join(filter(diffSearch.findall, sys.argv[1:]))))
+    numSearch = re.compile(rf".?([1-{maxOption}]).?")
+    foundNum = "".join(list("".join(filter(numSearch.findall, sys.argv[1:]))))
         # searching for supplementary arguments
     argSearch = re.compile(r"\-(.+)", re.I)
     foundArg = list("".join(filter(argSearch.findall, sys.argv[1:])))
     for x in foundArg:
-        if x == '-' or x.isnumeric():
+        if x == '-': # eliminates '-' from the arguments list
             foundArg.pop(foundArg.index(x))
     if foundArg:
         if 'b' in "".join(foundArg):
-            print("Basic Notes - Enabled")
-    return foundArg, foundDiff
+            print("* Basic Notes - Enabled")
+    return foundArg, foundNum
+
+def pauseInput(xrc):
+    if xrc == 1:
+        pauseInp = input("\nYour answer(optional): ")
+        return pauseInp
+    elif xrc == 2:
+        pauseInp = input("\nYour answer(space separated): ")
+        pauseInp = pauseInp.split()
+        return pauseInp
 
 
-def showTime(askDiff, options):
-    level = difficulty(askDiff, options)
+def showtime(diff, xrcType):
+    level = selectLevel(diff) # rt.: {'E major', 'F♯ minor', 'B♭ minor', 'C♯ major',...}
     if level == None:
         print("\nGoodbye\n")
         sys.exit()
     print("\nLet's begin:\n")
     while True:
         try:
-            question = askQuestion(level)
-            pauseAns = input("\nYour answer(optional): ")
+            question = askQuestion(xrcType, level) # 4 , ['F♭', 'minor']
+            pauseAns = pauseInput(xrcType)
             print("\n")
-            if pauseAns == 'exit' or pauseAns == 'q':
+            if pauseAns == 'exit' or pauseAns == 'quit' or pauseAns == 'q':
                 print("\nGoodbye\n")
-                break
-            giveAnswer(question, pauseAns)
+                sys.exit()
+            giveAnswer(question, pauseAns, xrcType)
         except:
             print("\nGoodbye\n")
             sys.exit()
@@ -389,10 +431,12 @@ dFlat = b'\xf0\x9d\x84\xab'.decode('utf-8')
 accidentalType = [natural, sharp, flat, dSharp, dFlat]
 
 firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
-octave = firstArgs[0]
-mainNotes = firstArgs[1]
-options = firstArgs[2]
-arguments = argFunc(options)
+octave = firstArgs[0] # {..., 'C♯': ['B𝄪', 'D♭', 'E♭𝄫'],...}
+mainNotes = firstArgs[1] # ['C', 'C♯', 'D', 'D♯', 'E',...] 
+diffOptions = firstArgs[2] # {'1': ['Major scales', ['C major', 'D major',...]]}
+arguments = argFunc(diffOptions) # ['b','c'] , '4b'
+
+
 
 if 'b' in arguments[0]:
     natural = ''
@@ -404,21 +448,34 @@ if 'b' in arguments[0]:
     firstArgs = startFunc(natural, sharp, flat, dSharp, dFlat, accidentalType)
     octave = firstArgs[0]
     mainNotes = firstArgs[1]
-    options = firstArgs[2]
+    diffOptions = firstArgs[2]
 
 if 'c' in arguments[0]:
     octave = firstArgs[0]
     mainNotes = firstArgs[1]
+    xrcType = 1
     giveCheats(octave)
     sys.exit()
 
-if arguments[1]:
-    askDiff = arguments[1]
-    showTime(askDiff, options)
+if 's' in arguments[0]:
+    octave = firstArgs[0]
+    mainNotes = firstArgs[1]
+
+
+if arguments[1]: # "if user passed 'difficulty' argument"
+    diff = arguments[1]
+    try:
+        xrcType = askXrc()
+    except:
+        print("\nGoodbye\n")
+        sys.exit()
+    showtime(diff, xrcType)
 else:
     try:
-        askDiff = askMenu(options)
+        xrcType = askXrc()
+        diff = diffSelector(diffOptions)
     except:
         print("\nGoodbye\n")
         sys.exit()        
-    showTime(askDiff, options)
+    showtime(diff, xrcType)
+    
