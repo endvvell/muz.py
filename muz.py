@@ -412,7 +412,6 @@ def showtime(diff, xrcType):
             pauseAns = pauseInput(xrcType)
             print("\n")
             if pauseAns == 'exit' or pauseAns == 'quit' or pauseAns == 'q':
-                print("\nGoodbye\n")
                 sys.exit()
             giveAnswer(question, pauseAns, xrcType)
         except:
